@@ -78,7 +78,7 @@ substitutions:
   mqtt_password: ""
 
   # ---- Time / weekly reboot ------------------------------------------------
-  TZ: Europe/Zurich
+  TZ: Europe/London
   reboot_days_of_week: MON
   reboot_hours: 5
   reboot_minutes: 0
