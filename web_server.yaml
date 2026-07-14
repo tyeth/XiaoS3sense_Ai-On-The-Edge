@@ -1,0 +1,6 @@
+# Local web UI on http://<device-ip>/ — used to view the live camera / AI
+# preview image during calibration and to tweak entities without recompiling.
+# The meter reading itself still goes to Home Assistant over MQTT.
+web_server:
+  port: 80
+  version: 3

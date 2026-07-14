@@ -7,43 +7,42 @@ bottom-right, in pixels of the captured frame), left-to-right.
 These are the **crop zones**, stored in the `${id_prefix}_crop_zones` global in
 [`config.yaml`](../config.yaml).
 
-## 1. See what the camera sees
-Enable the live preview so you can read pixel coordinates off the image:
+Everything below is done **at runtime — no recompilation.** This build ships a
+`web_server`, the camera-utils drawing subsystem, and a writable *Set Crop Zones*
+entity, so you calibrate on the running device.
 
-- In `config.yaml` set `meter_reader_tflite: generate_preview: true`, add a
-  `web_server:` (port 80) and the drawing subsystem in `esp32_camera_utils`
-  (`enable_drawing: true`), then reflash and open `http://<device-ip>/`.
-- Adjust framing, focus, `vertical_flip` / `horizontal_mirror`
-  (see the entities from [`camera_options.yaml`](../camera_options.yaml)),
-  brightness and the flash timing until the digits are sharp and level.
+## 1. See what the camera sees
+- Flip the **"Setup Mode (Preview)"** switch ON (in Home Assistant, or the
+  device web UI at `http://<device-ip>/`). This turns on the annotated preview.
+- Open `http://<device-ip>/` to view the image. Adjust framing, focus, and
+  `vertical_flip` / `horizontal_mirror` / brightness / flash timing using the
+  entities from [`camera_options.yaml`](../camera_options.yaml) — all live.
+- Get the digits sharp, level, and filling the frame.
 
 ## 2. Get the coordinates
-Two ways:
+The frame is `640×480`. Read the pixel box of each digit off the preview, or use
+the upstream **`draw_regions.py`** tool against a snapshot to draw boxes and
+export a `regions.json` array:
+https://github.com/nliaudat/esphome_ai_component (see `tools/`).
 
-- **`draw_regions.py`** (upstream tool): run it against a captured frame to draw
-  boxes interactively and export `regions.json` — copy the array in.
-  https://github.com/nliaudat/esphome_ai_component (see `tools/`)
-- **By hand**: read the pixel coordinates of each digit box off the preview.
+The result is a JSON array of `[x1, y1, x2, y2]` boxes, one per digit,
+left-to-right. Example for an 8-digit meter:
 
-The result is a JSON array, one box per digit. Example for an 8-digit meter:
-
-```yaml
-globals:
-  - id: ${id_prefix}_crop_zones
-    type: std::string
-    max_restore_data_length: 254
-    initial_value: '"[[9, 10, 49, 74], [64, 10, 104, 74], [118, 9, 158, 81], [173, 9, 213, 81], [230, 9, 270, 81], [286, 10, 326, 82], [339, 11, 379, 83], [394, 10, 434, 82]]"'
+```json
+[[9,10,49,74],[64,10,104,74],[118,9,158,81],[173,9,213,81],[230,9,270,81],[286,10,326,82],[339,11,379,83],[394,10,434,82]]
 ```
 
-Note the quoting: the value is a **string containing JSON**, so the inner double
-quotes are escaped — outer single quotes wrap `"...[...]..."`.
+## 3. Apply (runtime)
+Paste that array into the **"Set Crop Zones"** text entity (Home Assistant →
+the device's config entities, or the web UI). It applies **immediately** and is
+**persisted** (the backing global has restore), so it survives reboots. With
+*Show Crop Areas* on, the preview redraws the boxes so you can nudge them.
 
-## 3. Apply
-- **Compile-time**: paste the array as `initial_value` (as above) and reflash.
-- **Runtime** (only if you added the device to HA via the ESPHome/API
-  integration): call the `esphome.<name>_set_crop_zones` service with the JSON
-  string. With **MQTT-only** setups this service isn't exposed in HA, so use the
-  compile-time route.
+Then flip **"Setup Mode (Preview)"** back OFF for normal low-CPU operation.
+
+> Prefer compile-time instead? You can still bake a default into the
+> `${id_prefix}_crop_zones` global's `initial_value` in
+> [`config.yaml`](../config.yaml) — but you shouldn't need to.
 
 ## 4. Tune confidence
 Watch the *Meter Reading Confidence* and per-digit behaviour. Adjust the

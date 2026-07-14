@@ -130,6 +130,9 @@ tflite_micro_helper:
 esp32_camera_utils:
   id: ${id_prefix}_camera_utils
   camera_id: ${id_prefix}_espcam
+  # Drawing subsystem must be on at build time for the annotated calibration
+  # preview (toggle the "Setup Mode (Preview)" switch at runtime to use it).
+  enable_drawing: true
   debug: false
   debug_memory: false
 
@@ -174,9 +177,12 @@ meter_reader_tflite:
   debug_memory: false
   debug_timing: false
 
-  # Live preview of what the AI sees. Needs web_server + the drawing subsystem;
-  # off by default to save memory. See docs/CALIBRATION.md.
+  # Live preview of what the AI sees. web_server + the drawing subsystem are
+  # enabled (below / in web_server.yaml), so you can flip this ON at runtime with
+  # the "Setup Mode (Preview)" switch — no recompile. Left off by default to save
+  # CPU/RAM in normal operation. See docs/CALIBRATION.md.
   generate_preview: false
+  show_crop_areas: true
 
   crop_zones_global: ${id_prefix}_crop_zones
   flash_light_controller: ${id_prefix}_flash_controller
@@ -211,6 +217,9 @@ packages:
   # Connectivity: Wi-Fi + MQTT discovery to Home Assistant.
   - !include wifi.yaml
   - !include mqtt.yaml
+
+  # Local web UI (live/preview image + runtime entity tweaks during calibration).
+  - !include web_server.yaml
 
   # Misc.
   - !include globals.yaml

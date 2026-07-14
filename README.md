@@ -107,6 +107,7 @@ needs tuning per meter. See **[docs/CALIBRATION.md](docs/CALIBRATION.md)**.
 | [`dashboard/`](dashboard/) | Paste-in wrapper for the ESPHome Builder (Option A) |
 | [`secrets.yaml.example`](secrets.yaml.example) | Wi-Fi + MQTT credentials template (Option B) |
 | [`mqtt.yaml`](mqtt.yaml) | MQTT discovery to Home Assistant |
+| [`web_server.yaml`](web_server.yaml) | Local web UI for the calibration preview + runtime tweaks |
 | [`boards/`](boards/) | XIAO ESP32-S3 Sense board: pins, PSRAM, flash |
 | [`esp32_camera.yaml`](esp32_camera.yaml) / [`camera_options.yaml`](camera_options.yaml) | Camera + live tuning entities |
 | [`controls/`](controls/) | HA runtime controls + the meter/validator entities |
