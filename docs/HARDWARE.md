@@ -24,16 +24,22 @@ The XIAO ESP32-S3 Sense has **no usable bright flash LED** (just a dim user LED)
 so illumination is external. Two options are configured; the flash controller
 points at one via `flash_light:` in [`config.yaml`](../config.yaml).
 
-**Default — NeoPixel (WS2812) on MOSI (GPIO9 / D10).** Wire a NeoPixel's data in
-to GPIO9 (power from 5V/3V3 + GND). It's exposed as the *Flash NeoPixel* light,
-so you can set **brightness and colour from Home Assistant** for the best OCR
-contrast; the controller just switches it on/off around each capture. Configure:
+**Default — NeoPixel (SK6812mini-E) on MOSI (GPIO9 / D10).** Wire its data-in to
+GPIO9 (power from 5V/3V3 + GND). It's exposed as the *Flash NeoPixel* light, so
+you can set **brightness and colour from Home Assistant** for the best OCR
+contrast; the controller switches it on/off around each capture. Turn it on to
+full white once in HA — that state persists and becomes the flash setting.
 
 ```yaml
 substitutions:
   neopixel_pin: GPIO9
   neopixel_count: "1"
 ```
+
+The light uses `chipset: SK6812` (see the board file). SK6812 timing differs
+from WS2812 — using the wrong chipset makes the pixel do nothing. For a plain
+WS2812 change it there. `is_rgbw: false` (SK6812mini-E is RGB); set `true` only
+for an RGBW SK6812.
 
 **Alternative — plain LED on GPIO4 via a MOSFET.** A small N-channel MOSFET
 switching an LED (or ring) from 3V3/5V, gate to GPIO4 through ~100 Ω, LED series

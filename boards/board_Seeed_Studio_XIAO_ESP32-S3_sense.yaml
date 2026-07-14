@@ -108,10 +108,13 @@ light:
     id: ${id_prefix}_flash_neopixel
     pin: ${neopixel_pin}
     num_leds: ${neopixel_count}
-    chipset: WS2812
+    chipset: SK6812          # SK6812mini-E timing (NOT WS2812 — different bit timing)
     rgb_order: GRB
+    is_rgbw: false           # SK6812mini-E is RGB; set true only for RGBW SK6812
     default_transition_length: 0s   # snap on/off — it's a flash, not a fade
-    restore_mode: ALWAYS_OFF
+    # Persist your chosen brightness/colour across reboots, default off at boot.
+    # Turn it on full white once in HA; the flash controller reuses that state.
+    restore_mode: RESTORE_DEFAULT_OFF
     icon: "mdi:alarm-light"
 
   # Alternative flash: a plain on/off output on GPIO4 for an external MOSFET+LED.
