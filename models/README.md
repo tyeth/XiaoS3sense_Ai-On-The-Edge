@@ -7,9 +7,15 @@ interpreter whose tensor arena lives in the XIAO's 8 MB PSRAM.
 ## Committed model
 
 `digit_recognizer_v40_quantized_integer_quant_uint8.tflite`
-- 11 output classes: digits `0-9` plus `N` (not-a-number / mid-rotation).
+- Input `1×32×20×3` (RGB), output `1×10` — 10 classes, digits `0-9`, with a
+  built-in softmax (`output_processing: direct_class`).
 - Quantised (uint8) for a small footprint and fast integer inference.
 - ~99.06 % accuracy, ~1300 ms inference, ~106 KB footprint (per upstream).
+
+Each model ships a matching `.txt` sidecar describing its real input geometry,
+class count, and output processing. Keep it next to the `.tflite` — when the
+model is referenced by URL, the forked component downloads the sidecar too, so
+the config comes from the model, not from filename guesswork.
 
 `config.yaml` points at it via:
 
