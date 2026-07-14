@@ -43,7 +43,9 @@ external_components:
       - esp32_camera_utils
       - flash_light_controller
       - value_validator
-    refresh: 1d
+    # Always re-fetch during bring-up so component fixes are picked up. Pin to a
+    # tag/commit (and raise this) once you've settled on a version.
+    refresh: 0s
 
 # --------------------------------------------------------------------------
 # General configuration
