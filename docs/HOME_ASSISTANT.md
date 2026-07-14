@@ -1,36 +1,55 @@
 # Home Assistant integration
 
-Readings are delivered over **MQTT auto-discovery** (see [`mqtt.yaml`](../mqtt.yaml)).
+Two transports are supported. **Pick one** — running both makes HA show every
+entity twice.
 
-## Prerequisites
-- The **MQTT integration** is set up in Home Assistant, pointing at a broker
-  (usually Mosquitto on the HA host).
-- `secrets.yaml` has `mqtt_broker` / `mqtt_username` / `mqtt_password`.
+## Default: ESPHome native API (recommended for setup)
 
-> The broker is **not** the HA web UI. `https://homeassistant.gdenu.fi:8123`
-> (with its self-signed cert) is the UI; MQTT talks to the broker on port 1883.
-> The invalid 8123 certificate does not affect MQTT. To use TLS MQTT (8883)
-> instead, provide the broker CA in `mqtt.yaml` — see the comments there.
+The device runs the ESPHome native API ([`config.yaml`](../config.yaml) `api:`
+block). Home Assistant discovers it automatically:
 
-## Discovery
-On boot the device publishes discovery configs under the `homeassistant/`
-prefix. A **device** named *XIAO Meter OCR* appears under
-**Settings → Devices & Services → MQTT**, with entities including:
+1. **Settings → Devices & Services** → you'll see a discovered **ESPHome** device
+   (`xiao-meter-ocr`). Click **Configure / Add**.
+2. All entities appear under one device: *Meter Reading*, *Meter Reading
+   Confidence*, the **camera image**, timing diagnostics, and the config
+   controls (update interval, validator thresholds, camera tuning, *Setup Mode
+   (Preview)*, *Set Crop Zones*, pause/reload, restart).
 
-- **Meter Reading** (`sensor`) — the OCR value, with your configured
-  `device_class` / `state_class` / unit.
-- **Meter Reading Confidence** (`%`)
-- **Inference Time**, **Capture to Publish Time** (diagnostics)
-- Config controls: update interval, validator thresholds, flash timing,
-  camera tuning, pause/preview switches, restart, unload/reload.
+Why the API is nice for bring-up:
+- The **camera entity** shows the live/preview image right in HA — no need to
+  open the web UI to frame the meter.
+- The component's **services** are callable from **Developer Tools → Actions**:
+  `esphome.xiao_meter_ocr_set_crop_zones`, `..._trigger_inference`,
+  `..._start_flash_calibration`. (Crop zones are also settable via the *Set Crop
+  Zones* entity — see [CALIBRATION.md](CALIBRATION.md).)
 
-> ⚠️ **Do not also add this device via the ESPHome/API integration.** It would
-> create a duplicate set of entities. Use MQTT only.
+Optional: add an `api: encryption: key:` for an encrypted connection; without it
+the API still works on a trusted LAN.
+
+## Alternative: MQTT discovery
+
+Prefer MQTT (e.g. to decouple from the ESPHome integration)? You have the
+built-in Mosquitto broker, so:
+
+1. In [`config.yaml`](../config.yaml) uncomment `- !include mqtt.yaml` in the
+   packages list (and comment the reliance on the API if you want MQTT only).
+2. Set the broker creds — **Mosquitto refuses anonymous logins** (you'll see MQTT
+   return code `0x5`), so provide `mqtt_username` / `mqtt_password` (substitutions
+   or `!secret`). `mqtt_broker` defaults to `homeassistant.gdenu.fi`, port 1883.
+3. The device auto-registers via MQTT discovery under **Settings → Devices &
+   Services → MQTT**.
+
+> The broker is not the HA web UI. `https://homeassistant.gdenu.fi:8123` (self-
+> signed cert) is the UI; MQTT uses the broker on port 1883. The invalid 8123
+> certificate is irrelevant to MQTT.
+
+> ⚠️ Don't run the API integration **and** MQTT for the same device — you'll get
+> duplicate entities. Add it via one integration only.
 
 ## Energy dashboard
-For the Energy dashboard, the *Meter Reading* sensor needs
-`state_class: total_increasing` and the right `device_class`. These are already
-driven by the `config.yaml` substitutions:
+
+The *Meter Reading* sensor already carries the right classes, driven by the
+[`config.yaml`](../config.yaml) substitutions:
 
 ```yaml
 # electricity
@@ -47,10 +66,10 @@ meter_state_class: total_increasing
 ```
 
 Then **Settings → Dashboards → Energy** → add the electricity sensor under the
-grid, and the gas sensor under gas consumption.
+grid and the gas sensor under gas consumption.
 
-If you prefer to keep the raw OCR entity untouched and shape it in HA instead,
-you can wrap it in a template sensor:
+To shape the value in HA instead of touching the device, wrap it in a template
+sensor:
 
 ```yaml
 template:
@@ -63,6 +82,7 @@ template:
 ```
 
 ## Two meters
-Run one node per meter, each with a unique `name` / `id_prefix`, so their MQTT
-topics and entity ids don't collide. Point each camera at its meter and
-calibrate crop zones independently.
+
+Run one node per meter, each with a unique `name` / `id_prefix` so entity ids
+don't collide. Point each camera at its meter and calibrate crop zones
+independently.

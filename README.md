@@ -10,8 +10,10 @@ device**, and publish the reading to **Home Assistant via MQTT auto-discovery**.
 - 💾 **PSRAM everything** — the JPEG framebuffer and the TFLite tensor arena
   live in the XIAO's 8 MB PSRAM; images are held only transiently while being
   processed.
-- 🏠 **Home Assistant native** — entities appear automatically over MQTT
-  discovery. Feeds straight into the Energy dashboard.
+- 🏠 **Home Assistant native** — integrates over the ESPHome native API
+  (auto-discovered), exposing all entities, the camera image, and runtime
+  services. MQTT discovery is a ready-to-enable alternative. Feeds straight
+  into the Energy dashboard.
 - 📷 **OV5640** — the 120° wide-angle autofocus module (same socket as the
   stock OV2640).
 
@@ -36,7 +38,8 @@ Built as an ESPHome config layer on top of
  │                        value_validator (sanity / rate checks)       │
  └──────────────────────────────────────────┼──────────────────────────┘
                                              ▼
-                             MQTT discovery  ──►  Home Assistant
+                          ESPHome native API  ──►  Home Assistant
+                             (or MQTT discovery)
 ```
 
 Full-image capture + 8-digit inference runs in well under a second on the S3
@@ -106,7 +109,7 @@ needs tuning per meter. See **[docs/CALIBRATION.md](docs/CALIBRATION.md)**.
 | [`config.yaml`](config.yaml) | Top-level: substitutions, the AI components, includes |
 | [`dashboard/`](dashboard/) | Paste-in wrapper for the ESPHome Builder (Option A) |
 | [`secrets.yaml.example`](secrets.yaml.example) | Wi-Fi + MQTT credentials template (Option B) |
-| [`mqtt.yaml`](mqtt.yaml) | MQTT discovery to Home Assistant |
+| [`mqtt.yaml`](mqtt.yaml) | MQTT discovery — optional alternative to the native API |
 | [`web_server.yaml`](web_server.yaml) | Local web UI for the calibration preview + runtime tweaks |
 | [`boards/`](boards/) | XIAO ESP32-S3 Sense board: pins, PSRAM, flash |
 | [`esp32_camera.yaml`](esp32_camera.yaml) / [`camera_options.yaml`](camera_options.yaml) | Camera + live tuning entities |

@@ -98,11 +98,12 @@ ota:
 
 safe_mode:
 
-# Native API stays enabled so the component's runtime services
-# (set_crop_zones, trigger_inference, ...) and OTA work. Readings reach Home
-# Assistant over MQTT (see mqtt.yaml). IMPORTANT: add this device to HA via the
-# MQTT integration only — do NOT also add it via the ESPHome/API integration,
-# or you will get duplicate entities.
+# Home Assistant transport = the native ESPHome API. HA auto-discovers the
+# device (mDNS) and you add it via the ESPHome integration; that exposes every
+# entity, the camera image (handy for calibration), and the runtime services
+# (set_crop_zones, trigger_inference, ...). MQTT is available as an alternative
+# (see the packages list + mqtt.yaml) — use one OR the other, not both, or HA
+# will show duplicate entities.
 api:
   reboot_timeout: 0s              # don't reboot if the API connection drops
 
@@ -221,9 +222,13 @@ packages:
   - !include camera_options.yaml
   - !include esp32_camera.yaml
 
-  # Connectivity: Wi-Fi + MQTT discovery to Home Assistant.
+  # Connectivity: Wi-Fi. HA transport is the native API (above) by default.
   - !include wifi.yaml
-  - !include mqtt.yaml
+  # MQTT alternative: uncomment to publish via MQTT discovery instead, set the
+  # mqtt_* substitutions, and add the device to HA via MQTT (not the ESPHome
+  # integration) to avoid duplicate entities. Your Mosquitto broker works fine;
+  # remember it needs credentials (anonymous is refused — MQTT rc 0x5).
+  # - !include mqtt.yaml
 
   # Local web UI (live/preview image + runtime entity tweaks during calibration).
   - !include web_server.yaml
