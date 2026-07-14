@@ -19,17 +19,45 @@ Defined in [`boards/board_Seeed_Studio_XIAO_ESP32-S3_sense.yaml`](../boards/boar
 | SIOC/SCL | 39 | | PCLK | 13 |
 | D0..D7 | 15,17,18,16,14,12,11,48 | | PWDN/RESET | not wired |
 
-## OV5640 focus
-The OV5640 has a voice-coil autofocus lens. There are two practical options:
+## Flash / illumination
+The XIAO ESP32-S3 Sense has **no usable bright flash LED** (just a dim user LED).
+The firmware drives a flash output on **GPIO4** (a free header pin), intended for
+**external circuitry** — e.g. a small N-channel MOSFET switching an LED (or LED
+ring) from 3V3/5V, gate to GPIO4 through a ~100 Ω resistor, plus the LED's series
+resistor. Make it configurable in your device substitutions:
 
-1. **Fixed focus (simplest).** For a meter at a fixed distance, the lens often
-   sits at a usable focus out of the box, or you can gently set it once. This is
-   the default here — nothing extra to configure.
-2. **Software autofocus.** Full autofocus requires uploading the sensor's AF
-   firmware over SCCB at boot and triggering a focus command. ESPHome's
-   `esp32_camera` doesn't do this natively. If your working distance needs it,
-   see the Seeed forum thread on OV5640 autofocus for the firmware blob and the
-   register sequence, and add it via an `on_boot` lambda:
+```yaml
+substitutions:
+  flash_led_pin: GPIO4        # any free GPIO
+  flash_led_inverted: "false" # "false" = pin HIGH = flash ON (active-high driver)
+```
+
+The capture sequence already does **flash-on → settle → capture → flash-off**:
+`Flash Pre-Time` (default 7 s) is the settling window for exposure/white-balance
+(and autofocus, below); `Flash Post-Time` (200 ms) holds it briefly after. Both
+are runtime number entities — tune them without recompiling.
+
+## Camera entity & bandwidth
+The `esp32_camera` **entity** in Home Assistant is only a network stream; it
+pushes frames when viewed. **Disabling it saves bandwidth and does not affect
+OCR** — inference reads the framebuffer locally in PSRAM. Keep it enabled while
+calibrating, then in HA open the entity → settings → **disable**. (Or add
+`disabled_by_default: true` under `esp32_camera:` if you want it off from first
+boot.)
+
+## OV5640 autofocus
+The OV5640 has a voice-coil autofocus lens, but the stock `esp32_camera` driver
+**does not load the AF firmware**, so out of the box the lens sits at its default
+focus. Options:
+
+1. **Fixed focus (simplest).** For a meter at a fixed distance, set the lens once
+   and mount rigidly. Works with no extra config — start here.
+2. **Software autofocus (planned option).** Enabling AF requires uploading the
+   OV5640 AF firmware blob over SCCB at boot and then either continuous-focus
+   mode or a single-focus trigger. The plan for this repo: trigger a single AF
+   when the flash turns on, so the existing 7 s pre-flash window covers focus +
+   white-balance settling before capture. Tracking this as a fork addition
+   (`enable_autofocus`). Reference for the firmware/registers:
    https://forum.seeedstudio.com/t/ov5640-camera-for-xiao-esp32s3-sense-how-to-use-autofocus/272485
 
 ## PSRAM

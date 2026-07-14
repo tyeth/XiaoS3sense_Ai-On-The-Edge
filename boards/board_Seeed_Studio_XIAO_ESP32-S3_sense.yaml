@@ -51,7 +51,12 @@ substitutions:
 
   # LEDs
   status_led_pin: GPIO21
+  # Flash output. The Sense has no usable bright flash LED, so this drives
+  # EXTERNAL circuitry (MOSFET + LED). GPIO4 is a free header pin. Set the
+  # polarity to match your driver: "false" = pin HIGH turns the flash on
+  # (typical low-side N-MOSFET / active-high driver); "true" = active-low.
   flash_led_pin: GPIO4
+  flash_led_inverted: "false"
 
 esp32:
   board: ${board}
@@ -107,4 +112,4 @@ output:
   - platform: gpio
     pin: ${flash_led_pin}
     id: ${id_prefix}_flash_light_output
-    inverted: true
+    inverted: ${flash_led_inverted}
