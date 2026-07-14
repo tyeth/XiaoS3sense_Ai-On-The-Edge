@@ -171,6 +171,13 @@ meter_reader_tflite:
 
   update_interval: 60s
 
+  # Tensor arena for the TFLite interpreter (in PSRAM). The model's .txt sidecar
+  # estimates ~18KB, but TFLite Micro actually needs ~31KB usable on this build
+  # and allocation fails below that — so pin a generous value. The model's total
+  # tensor memory is ~106KB; 512KB leaves plenty of headroom (8MB PSRAM). Tune
+  # down if you like, but keep it well above ~64KB.
+  tensor_arena_size: "512KB"
+
   debug: false
   debug_image: false
   debug_image_out_serial: false
