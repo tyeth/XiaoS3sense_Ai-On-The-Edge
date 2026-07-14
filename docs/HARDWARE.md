@@ -64,6 +64,21 @@ calibrating, then in HA open the entity → settings → **disable**. (Or add
 `disabled_by_default: true` under `esp32_camera:` if you want it off from first
 boot.)
 
+## OV5640 heat
+The OV5640 runs noticeably hot, and the Sense doesn't wire the sensor's
+power-down pin, so it can't be idled between captures. It gets hottest when
+**streaming continuously** (preview / live camera view on). To keep it cool:
+
+- Only turn on **Setup Mode (Preview)** / the camera live view while calibrating;
+  turn them off for normal operation (capture is once per `update_interval`).
+- XCLK is set to **10 MHz** (`external_clock_frequency`) instead of 20 MHz —
+  roughly halves the clock heat. Raise it only if image quality suffers.
+- Keep `max_framerate` / `idle_framerate` low (already 1 fps / 0.2 fps).
+- Give it airflow; a tiny heatsink on the sensor helps if it's enclosed.
+
+If it's *too hot to touch even when idle (not streaming)*, suspect a power/wiring
+fault rather than normal operation.
+
 ## OV5640 autofocus
 The OV5640 has a voice-coil autofocus lens, but the stock `esp32_camera` driver
 **does not load the AF firmware**, so out of the box the lens sits at its default
