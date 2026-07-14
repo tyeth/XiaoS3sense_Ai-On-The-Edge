@@ -1,0 +1,35 @@
+# ---------------------------------------------------------------------------
+# ESPHome Builder wrapper (Home Assistant)
+#
+# Paste this as a NEW device in the ESPHome Builder add-on. It pulls the full
+# project from GitHub as a package and compiles it inside Home Assistant — no
+# local toolchain, and no secrets.yaml in the repo. Secrets live in the
+# Builder's own secrets editor (see the list at the bottom).
+#
+# To pin a version, change @main to a tag/commit.
+# ---------------------------------------------------------------------------
+substitutions:
+  name: xiao-meter-ocr
+  friendly_name: "XIAO Meter OCR"
+  id_prefix: xiao_meter
+
+  # Meter identity — electricity by default. For gas use: kWh→m³, energy→gas.
+  meter_unit: kWh
+  meter_device_class: energy
+  meter_state_class: total_increasing
+
+packages:
+  meter_ocr: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
+
+# ---------------------------------------------------------------------------
+# Add these to your ESPHome Builder secrets (Builder → Secrets editor):
+#
+#   wifi_ssid_1: "your-ssid"
+#   wifi_password_1: "your-wifi-password"
+#   wifi_ssid_2: "backup-ssid"
+#   wifi_password_2: "backup-wifi-password"
+#   fallback_hotspot_password: "meter-ocr-hotspot"
+#   mqtt_broker: "homeassistant.gdenu.fi"
+#   mqtt_username: "mqtt-user"
+#   mqtt_password: "mqtt-password"
+# ---------------------------------------------------------------------------

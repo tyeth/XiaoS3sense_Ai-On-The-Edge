@@ -52,33 +52,53 @@ Full-image capture + 8-digit inference runs in well under a second on the S3
 
 ## Quick start
 
-You need [ESPHome](https://esphome.io) (`pip install esphome`, or the HA add-on).
+### Option A — ESPHome Builder in Home Assistant (easiest, no local tools)
+
+The [ESPHome Builder add-on](https://esphome.io/guides/getting_started_hassio)
+compiles the firmware **inside Home Assistant** and keeps secrets in its own
+editor — nothing to install, no `secrets.yaml` in the repo.
+
+1. Open the **ESPHome Builder** add-on → **New device**.
+2. Give it a name, skip the Wi-Fi prompt, then **Edit** the device YAML and
+   replace it with the contents of
+   [`dashboard/xiao-meter-ocr.yaml`](dashboard/xiao-meter-ocr.yaml). That file
+   pulls this whole repo in as a package:
+   ```yaml
+   packages:
+     meter_ocr: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
+   ```
+3. In the Builder's **Secrets** editor, add the Wi-Fi + MQTT secrets listed at
+   the bottom of that file.
+4. **Install** → *Plug into this computer* (first flash over USB) or *Wirelessly*
+   (OTA thereafter). Hold **BOOT** 2-3 s for the first serial flash.
+
+Because the device declares [`dashboard_import`](config.yaml), the Builder also
+recognises it as a shareable project and can adopt it directly.
+
+### Option B — ESPHome CLI
 
 ```bash
 git clone https://github.com/tyeth/XiaoS3sense_Ai-On-The-Edge.git
 cd XiaoS3sense_Ai-On-The-Edge
 
-# 1. Credentials
 cp secrets.yaml.example secrets.yaml
 $EDITOR secrets.yaml          # Wi-Fi + MQTT broker (homeassistant.gdenu.fi)
-
-# 2. Tell it about your meter
 $EDITOR config.yaml           # meter_unit / device_class (electricity vs gas)
 
-# 3. Validate, then flash over USB (hold BOOT 2-3 s first)
-esphome compile config.yaml
-esphome run config.yaml
+esphome compile config.yaml   # validate
+esphome run config.yaml       # flash (hold BOOT 2-3 s first)
 ```
 
-Then **calibrate the digit crop zones** — this is the one step that always needs
-tuning per meter. See **[docs/CALIBRATION.md](docs/CALIBRATION.md)**.
+Then, either way, **calibrate the digit crop zones** — the one step that always
+needs tuning per meter. See **[docs/CALIBRATION.md](docs/CALIBRATION.md)**.
 
 ## Configuration map
 
 | File | Purpose |
 |------|---------|
 | [`config.yaml`](config.yaml) | Top-level: substitutions, the AI components, includes |
-| [`secrets.yaml.example`](secrets.yaml.example) | Wi-Fi + MQTT credentials template |
+| [`dashboard/`](dashboard/) | Paste-in wrapper for the ESPHome Builder (Option A) |
+| [`secrets.yaml.example`](secrets.yaml.example) | Wi-Fi + MQTT credentials template (Option B) |
 | [`mqtt.yaml`](mqtt.yaml) | MQTT discovery to Home Assistant |
 | [`boards/`](boards/) | XIAO ESP32-S3 Sense board: pins, PSRAM, flash |
 | [`esp32_camera.yaml`](esp32_camera.yaml) / [`camera_options.yaml`](camera_options.yaml) | Camera + live tuning entities |

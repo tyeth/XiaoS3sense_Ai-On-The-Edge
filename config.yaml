@@ -19,6 +19,14 @@
 #  vendored copy of that project (MIT — see LICENSE / ATTRIBUTION.md).
 # =============================================================================
 
+# Makes this repo importable into the ESPHome Builder (the ESPHome add-on in
+# Home Assistant): "New device → ... → this URL", or paste it into a device's
+# packages. The Builder compiles in HA and manages secrets in its own editor —
+# no local toolchain and no secrets.yaml checked out. See README "Option A".
+dashboard_import:
+  package_import_url: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
+  import_full_config: false
+
 # Pull the C++ components straight from upstream so they stay maintained.
 external_components:
   - source:
