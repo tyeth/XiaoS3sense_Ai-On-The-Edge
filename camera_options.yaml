@@ -1,0 +1,169 @@
+# Home Assistant controls for live camera tuning.
+# Vendored/condensed from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+# Source idea: https://community.home-assistant.io/t/esp32-s3-wroom-1-n8r8-freenove-camera-board-with-psram-working/815276
+
+switch:
+  - platform: template
+    name: "Vertical Flip"
+    id: ${id_prefix}_v_flip
+    icon: mdi:swap-vertical
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    turn_on_action:
+      lambda: |-
+        id(${id_prefix}_espcam).set_vertical_flip(true);
+        id(${id_prefix}_espcam_update) = true;
+    turn_off_action:
+      lambda: |-
+        id(${id_prefix}_espcam).set_vertical_flip(false);
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "Horizontal Mirror"
+    id: ${id_prefix}_h_mirror
+    icon: mdi:reflect-horizontal
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: true
+    turn_on_action:
+      lambda: |-
+        id(${id_prefix}_espcam).set_horizontal_mirror(true);
+        id(${id_prefix}_espcam_update) = true;
+    turn_off_action:
+      lambda: |-
+        id(${id_prefix}_espcam).set_horizontal_mirror(false);
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "Auto Exposure 2"
+    id: ${id_prefix}_aec_2
+    icon: mdi:auto-fix
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    turn_on_action:
+      lambda: |-
+        id(${id_prefix}_espcam).set_aec2(true);
+        id(${id_prefix}_espcam_update) = true;
+    turn_off_action:
+      lambda: |-
+        id(${id_prefix}_espcam).set_aec2(false);
+        id(${id_prefix}_espcam_update) = true;
+
+select:
+  - platform: template
+    name: "Special Effects"
+    icon: mdi:filter
+    id: ${id_prefix}_effect
+    options: ["None", "Negative", "Grayscale", "Red Tint", "Green Tint", "Blue Tint", "Sepia"]
+    initial_option: "None"
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_special_effect((esphome::esp32_camera::ESP32SpecialEffect)id(${id_prefix}_effect).active_index().value());
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "White Balance Mode"
+    id: ${id_prefix}_wb
+    icon: mdi:white-balance-auto
+    options: ["Auto", "Sunny", "Cloudy", "Office", "Home"]
+    initial_option: "Auto"
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_wb_mode((esphome::esp32_camera::ESP32WhiteBalanceMode)id(${id_prefix}_wb).active_index().value());
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "Auto Exposure Mode"
+    id: ${id_prefix}_aec
+    icon: mdi:auto-fix
+    options: ["Manual", "Auto"]
+    initial_option: "Auto"
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_aec_mode((esphome::esp32_camera::ESP32GainControlMode)id(${id_prefix}_aec).active_index().value());
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "Gain Control Mode"
+    id: ${id_prefix}_gc
+    icon: mdi:auto-fix
+    options: ["Manual", "Auto"]
+    initial_option: "Auto"
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_agc_mode((esphome::esp32_camera::ESP32GainControlMode)id(${id_prefix}_gc).active_index().value());
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "Gain Ceiling"
+    id: ${id_prefix}_g_ceiling
+    options: ["2x", "4x", "8x", "16x", "32x", "64x", "128x"]
+    initial_option: "2x"
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_agc_gain_ceiling((esphome::esp32_camera::ESP32AgcGainCeiling)id(${id_prefix}_g_ceiling).active_index().value());
+        id(${id_prefix}_espcam_update) = true;
+
+number:
+  - platform: template
+    name: "Contrast"
+    id: ${id_prefix}_contrast
+    icon: mdi:contrast-box
+    min_value: -2
+    max_value: 2
+    step: 1
+    initial_value: 0
+    mode: SLIDER
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_contrast(id(${id_prefix}_contrast).state);
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "Brightness"
+    id: ${id_prefix}_brightness
+    icon: mdi:brightness-6
+    min_value: -2
+    max_value: 2
+    step: 1
+    initial_value: 0
+    mode: SLIDER
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_brightness(id(${id_prefix}_brightness).state);
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "Saturation"
+    id: ${id_prefix}_saturation
+    icon: mdi:palette-outline
+    min_value: -2
+    max_value: 2
+    step: 1
+    initial_value: 0
+    mode: SLIDER
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_saturation(id(${id_prefix}_saturation).state);
+        id(${id_prefix}_espcam_update) = true;
+
+  - platform: template
+    name: "AE Value"
+    id: ${id_prefix}_ae_value
+    min_value: 0
+    max_value: 1200
+    step: 10
+    initial_value: 0
+    mode: SLIDER
+    optimistic: True
+    on_value:
+      lambda: |-
+        id(${id_prefix}_espcam).set_aec_value(id(${id_prefix}_ae_value).state);
+        id(${id_prefix}_espcam_update) = true;

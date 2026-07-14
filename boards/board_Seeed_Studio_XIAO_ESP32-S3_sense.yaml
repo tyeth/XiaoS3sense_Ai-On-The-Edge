@@ -1,0 +1,110 @@
+# XIAO ESP32-S3 Sense board definition.
+# https://www.seeedstudio.com/XIAO-ESP32S3-Sense-p-5639.html
+#
+# Camera pins below are the same socket used by both the stock OV2640 and the
+# OV5640 (120° wide-angle, autofocus) module — the FPC connector is identical,
+# only the sensor differs. The esp32_camera driver auto-detects the sensor.
+# OV5640 autofocus needs a firmware blob loaded at boot (see docs/HARDWARE.md);
+# for a fixed meter distance, fixed focus usually works fine.
+#
+# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: ${esphome_min_version}
+  name_add_mac_suffix: False
+  project:
+    name: "tyeth.xiao-meter-ocr"
+    version: "${revision}"
+
+  platformio_options:
+    board_build.extra_flags:
+      - -DBOARD_HAS_PSRAM
+      - -DTF_LITE_STATIC_MEMORY       # TFLite Micro
+      - -DTF_LITE_DISABLE_X86_NEON    # TFLite Micro
+      - -DESP_NN                      # ESP-NN hardware acceleration on the S3
+    board_build.f_flash: 80000000L
+    board_build.flash_mode: qio
+    board_build.memory_type: qio_opi
+
+substitutions:
+  board: seeed_xiao_esp32s3
+  framework: esp-idf
+
+  # SD card pins (unused here — we keep everything in PSRAM/flash — but left
+  # documented since the Sense exposes them).
+  sdcard_clk_pin: GPIO07
+  sdcard_cmd_pin: GPIO09
+  sdcard_d0_pin: GPIO08
+  sdcard_d3_pin: GPIO21
+
+  # Camera pins (OV2640 / OV5640 socket)
+  external_clock_pin: GPIO10
+  external_clock_frequency: 20MHz
+  i2c_pins_sda: GPIO40
+  i2c_pins_scl: GPIO39
+  data_pins: [GPIO15, GPIO17, GPIO18, GPIO16, GPIO14, GPIO12, GPIO11, GPIO48]
+  vsync_pin: GPIO38
+  href_pin: GPIO47
+  pixel_clock_pin: GPIO13
+
+  # LEDs
+  status_led_pin: GPIO21
+  flash_led_pin: GPIO4
+
+esp32:
+  board: ${board}
+  cpu_frequency: 240MHZ
+  flash_size: 8MB
+  framework:
+    type: ${framework}
+    version: recommended
+    sdkconfig_options:
+      CONFIG_COMPILER_OPTIMIZATION_PERF: y
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB: "y"
+      CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY: "y"
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: "y"
+      CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST: "y"
+      CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY: "y"
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+      CONFIG_MBEDTLS_SSL_PROTO_TLS1_3: "y"
+      CONFIG_TASK_WDT: "y"
+      CONFIG_TASK_WDT_TIMEOUT_S: "30"
+      CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0: "n"
+      CONFIG_SPIRAM_SUPPORT: y
+      CONFIG_SPIRAM_USE_CAPS_ALLOC: y
+      CONFIG_SPIRAM_USE_MALLOC: y
+      CONFIG_LOG_DEFAULT_LEVEL: "0"
+      CONFIG_CAMERA_TASK_STACK_SIZE: "8192"
+      CONFIG_FATFS_LFN_STACK: "y"
+      CONFIG_FREERTOS_HZ: "1000"
+      CONFIG_ESP32S3_SPIRAM_SUPPORT: y
+      CONFIG_SPIRAM_SPEED_80M: y
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+light:
+  - platform: binary
+    output: ${id_prefix}_flash_light_output
+    name: "${name} Flash LED"
+    id: ${id_prefix}_flash
+    icon: "mdi:alarm-light"
+
+  - platform: status_led
+    name: "${name} Status LED"
+    id: ${id_prefix}_status_led
+    icon: "mdi:alarm-light"
+    restore_mode: ALWAYS_OFF
+    pin: ${status_led_pin}
+
+output:
+  - platform: gpio
+    pin: ${flash_led_pin}
+    id: ${id_prefix}_flash_light_output
+    inverted: true

@@ -1,0 +1,184 @@
+# Meter Reader TFLite — Home Assistant controls + the sensor/text_sensor
+# entities referenced by meter_reader_tflite in config.yaml.
+# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+
+switch:
+  - platform: template
+    name: "Pause AI Processing"
+    id: ${id_prefix}_pause_ai_processing
+    icon: "mdi:pause"
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: |-
+          if (id(${id_prefix}_meter_reader) != nullptr) {
+            id(${id_prefix}_meter_reader)->set_pause_processing(true);
+          }
+    turn_off_action:
+      - lambda: |-
+          if (id(${id_prefix}_meter_reader) != nullptr) {
+            id(${id_prefix}_meter_reader)->set_pause_processing(false);
+          }
+
+  - platform: template
+    name: "Setup Mode (Preview)"
+    id: ${id_prefix}_setup_mode_preview
+    icon: "mdi:camera-cog"
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: |-
+          if (id(${id_prefix}_meter_reader) != nullptr) {
+            id(${id_prefix}_meter_reader)->set_generate_preview(true);
+          }
+    turn_off_action:
+      - lambda: |-
+          if (id(${id_prefix}_meter_reader) != nullptr) {
+            id(${id_prefix}_meter_reader)->set_generate_preview(false);
+          }
+
+number:
+  - platform: template
+    name: "Update Interval"
+    id: ${id_prefix}_meter_update_interval
+    icon: "mdi:timer"
+    unit_of_measurement: "s"
+    min_value: 1
+    max_value: 3600
+    step: 1
+    initial_value: 60
+    entity_category: config
+    optimistic: true
+    restore_value: true
+    set_action:
+      - lambda: |-
+          if (id(${id_prefix}_meter_reader) != nullptr) {
+            id(${id_prefix}_meter_reader)->set_update_interval((uint32_t)(x * 1000));
+          }
+
+  - platform: template
+    name: "Set Last Valid Value"
+    id: ${id_prefix}_set_last_valid
+    icon: "mdi:restore"
+    min_value: 0
+    max_value: 9999999
+    step: 1
+    initial_value: 0
+    entity_category: config
+    optimistic: true
+    set_action:
+      - lambda: |-
+          if (id(${id_prefix}_meter_reader) != nullptr) {
+            id(${id_prefix}_meter_reader)->set_last_valid_value(x);
+          }
+
+button:
+  - platform: template
+    name: "Unload AI Components"
+    id: ${id_prefix}_unload_btn
+    icon: "mdi:download-off"
+    entity_category: config
+
+  - platform: template
+    name: "Reload AI Components"
+    id: ${id_prefix}_reload_btn
+    icon: "mdi:reload"
+    entity_category: config
+
+sensor:
+  - platform: template
+    name: "Meter Reading"
+    id: ${id_prefix}_meter_value
+    unit_of_measurement: "${meter_unit}"
+    accuracy_decimals: 0
+    icon: "mdi:counter"
+    state_class: ${meter_state_class}
+    device_class: ${meter_device_class}
+
+  - platform: template
+    name: "Meter Reading Confidence"
+    id: ${id_prefix}_meter_confidence
+    unit_of_measurement: "%"
+    accuracy_decimals: 2
+    icon: "mdi:percent"
+
+  - platform: template
+    id: ${id_prefix}_inference_time
+    name: "Inference Time"
+    unit_of_measurement: "ms"
+    accuracy_decimals: 0
+    state_class: measurement
+    icon: mdi:timer-outline
+
+  - platform: template
+    id: ${id_prefix}_capture_to_publish_time
+    name: "Capture to Publish Time"
+    unit_of_measurement: "ms"
+    accuracy_decimals: 0
+    state_class: measurement
+    icon: mdi:timer-sand
+
+text:
+  - platform: template
+    name: "Set Last Valid Value (String)"
+    id: ${id_prefix}_set_last_valid_string
+    icon: "mdi:form-textbox"
+    mode: text
+    entity_category: config
+    optimistic: true
+    min_length: 1
+    max_length: 20
+    set_action:
+      - lambda: |-
+          if (id(${id_prefix}_meter_reader) != nullptr) {
+            id(${id_prefix}_meter_reader)->set_last_valid_value(x);
+          }
+
+# Runtime services (usable from Home Assistant if the device is added via the
+# ESPHome/API integration; with MQTT-only you set crop zones by editing
+# globals.yaml and reflashing — see docs/CALIBRATION.md).
+api:
+  services:
+    - service: get_meter_data
+      then:
+        - lambda: |-
+            auto val = id(${id_prefix}_meter_reader).get_value_sensor()->state;
+            auto conf = id(${id_prefix}_meter_reader).get_confidence_sensor()->state;
+            ESP_LOGD("api", "Meter Data: Value=%.2f, Confidence=%.2f", val, conf);
+
+    - service: set_crop_zones
+      variables:
+        zones: string
+      then:
+        - text_sensor.template.publish:
+            id: ${id_prefix}_crop_zones_sensor
+            state: !lambda 'return zones;'
+        - lambda: |-
+            id(${id_prefix}_crop_zones) = zones;
+            id(${id_prefix}_meter_reader).set_crop_zones(zones);
+
+    - service: trigger_inference
+      then:
+        - lambda: 'id(${id_prefix}_meter_reader).force_flash_inference();'
+
+    - service: start_flash_calibration
+      then:
+        - lambda: 'id(${id_prefix}_meter_reader).start_flash_calibration();'
+
+text_sensor:
+  - platform: template
+    name: "Inference Logs"
+    id: ${id_prefix}_inference_logs
+    icon: "mdi:text-box-outline"
+
+  - platform: template
+    name: "Main Logs"
+    id: ${id_prefix}_main_logs
+    icon: "mdi:text-box-multiple-outline"
+
+  - platform: template
+    name: "Crop Zones"
+    id: ${id_prefix}_crop_zones_sensor
+    icon: "mdi:crop"

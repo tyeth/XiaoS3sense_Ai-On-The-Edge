@@ -1,0 +1,24 @@
+name: ESPHome build
+
+# Compiles the firmware on every push/PR so config regressions are caught
+# without hardware. Uses placeholder secrets — nothing here is real.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Provide placeholder secrets
+        run: cp secrets.yaml.example secrets.yaml
+
+      - name: Compile firmware
+        uses: esphome/build-action@v7
+        with:
+          yaml-file: config.yaml

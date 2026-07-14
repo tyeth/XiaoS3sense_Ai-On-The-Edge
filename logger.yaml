@@ -1,0 +1,11 @@
+# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+logger:
+  level: DEBUG          # NONE / ERROR / INFO / DEBUG / VERBOSE
+  logs:
+    sensor: INFO
+    text_sensor: INFO
+    esp32_camera: WARN
+    meter_reader_tflite: DEBUG
+    ModelHandler: DEBUG
+    ImageProcessor: DEBUG
+    tflite_coordinator: DEBUG

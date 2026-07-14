@@ -1,0 +1,17 @@
+# Local secrets — copy secrets.yaml.example to secrets.yaml and fill in.
+secrets.yaml
+
+# ESPHome build artifacts
+.esphome/
+*.bin
+*.elf
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+
+# Local Claude Code tooling
+.claude/

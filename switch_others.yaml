@@ -1,0 +1,6 @@
+# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+switch:
+  - platform: restart
+    name: "${friendly_name} restart"
+    icon: "mdi:restart"
+    id: ${id_prefix}_ctrl_reboot

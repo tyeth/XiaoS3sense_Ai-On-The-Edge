@@ -1,0 +1,195 @@
+# =============================================================================
+#  XIAO ESP32-S3 Sense + OV5640  —  on-device meter-digit OCR → Home Assistant
+# =============================================================================
+#
+#  What this does:
+#    * The XIAO ESP32-S3 Sense captures a frame of your meter with the OV5640.
+#    * A quantised CNN digit model (committed in models/, embedded into the
+#      firmware at build time) runs on-device via TensorFlow Lite Micro, with
+#      the tensor arena allocated in the 8 MB PSRAM.
+#    * The reading is published to Home Assistant via MQTT auto-discovery.
+#
+#  No SD card, no external OCR server — inference happens on the ESP32-S3.
+#
+#  Flashing note: press the BOOT button for 2-3 s before the serial connection
+#  initialises. After an OTA update, press EN (reset) to run the new firmware.
+#
+#  The heavy lifting lives in the nliaudat/esphome_ai_component components,
+#  pulled below via external_components. The YAML in this repo is a tailored,
+#  vendored copy of that project (MIT — see LICENSE / ATTRIBUTION.md).
+# =============================================================================
+
+# Pull the C++ components straight from upstream so they stay maintained.
+external_components:
+  - source:
+      type: git
+      url: https://github.com/nliaudat/esphome_ai_component
+      ref: main
+    components:
+      - meter_reader_tflite
+      - tflite_micro_helper
+      - esp32_camera_utils
+      - flash_light_controller
+      - value_validator
+    refresh: 1d
+
+# --------------------------------------------------------------------------
+# General configuration
+# --------------------------------------------------------------------------
+substitutions:
+  name: xiao-meter-ocr            # no special characters
+  friendly_name: "XIAO Meter OCR"
+  id_prefix: "xiao_meter"         # prefix for every entity id; change per device
+
+  revision: "1.0"
+  esphome_min_version: "2025.12.0"
+
+  # ---- Meter identity (edit for your meter) --------------------------------
+  # Electricity default. For a gas meter run a SECOND device with its own name/
+  # id_prefix and set: meter_unit: m³, meter_device_class: gas.
+  # See https://developers.home-assistant.io/docs/core/entity/sensor/
+  meter_unit: kWh
+  meter_device_class: energy
+  meter_state_class: total_increasing
+
+  # ---- Camera --------------------------------------------------------------
+  # JPEG capture + software grayscale conversion in the ImageProcessor. This is
+  # the most reliable path on the esp32-camera driver (see esp32_camera.yaml).
+  camera_pixel_format: JPEG
+  camera_resolution: 640x480      # OV5640 also supports 800x600, 1280x1024, ...
+  camera_jpeg_quality: 10         # 10 (best) .. 63 (worst)
+  camera_max_framerate: 1fps
+  camera_idle_framerate: 0.2fps
+
+  # ---- Time / weekly reboot ------------------------------------------------
+  TZ: Europe/Zurich
+  reboot_days_of_week: MON
+  reboot_hours: 5
+  reboot_minutes: 0
+  reboot_seconds: 0
+
+preferences:
+  flash_write_interval: 60min
+
+ota:
+  - platform: esphome
+
+safe_mode:
+
+# Native API stays enabled so the component's runtime services
+# (set_crop_zones, trigger_inference, ...) and OTA work. Readings reach Home
+# Assistant over MQTT (see mqtt.yaml). IMPORTANT: add this device to HA via the
+# MQTT integration only — do NOT also add it via the ESPHome/API integration,
+# or you will get duplicate entities.
+api:
+  reboot_timeout: 0s              # don't reboot if the API connection drops
+
+# --------------------------------------------------------------------------
+# Crop zones — where the digits are in the frame.
+#
+# One [x1, y1, x2, y2] box per digit, left-to-right. Start with an empty list,
+# flash, look at the preview, then fill this in (see docs/CALIBRATION.md). You
+# can also set it live via the esphome.<name>_set_crop_zones service.
+# --------------------------------------------------------------------------
+globals:
+  - id: ${id_prefix}_crop_zones
+    type: std::string
+    max_restore_data_length: 254
+    initial_value: "\"[]\""
+    # Example for an 8-digit meter (replace with your own coordinates):
+    # initial_value: '"[[9, 10, 49, 74], [64, 10, 104, 74], [118, 9, 158, 81], [173, 9, 213, 81], [230, 9, 270, 81], [286, 10, 326, 82], [339, 11, 379, 83], [394, 10, 434, 82]]"'
+
+# --------------------------------------------------------------------------
+# AI components
+# --------------------------------------------------------------------------
+tflite_micro_helper:
+  debug: false
+
+esp32_camera_utils:
+  id: ${id_prefix}_camera_utils
+  camera_id: ${id_prefix}_espcam
+  debug: false
+  debug_memory: false
+
+# Optional on-board LED as a "flash" to stabilise exposure before capture.
+flash_light_controller:
+  id: ${id_prefix}_flash_controller
+  flash_light: ${id_prefix}_flash
+  flash_pre_time: 7000ms
+  flash_post_time: 200ms
+  debug: false
+
+value_validator:
+  id: ${id_prefix}_validator
+  allow_negative_rates: false
+  max_absolute_diff: 300
+  enable_smart_validation: true
+  smart_validation_window: 5
+  high_confidence_threshold: 0.90
+  per_digit_confidence_threshold: 0.85
+  strict_confidence_check: true
+  max_history_size: 50kB
+
+meter_reader_tflite:
+  id: ${id_prefix}_meter_reader
+  validator: ${id_prefix}_validator
+  camera_id: ${id_prefix}_espcam
+
+  # The model is committed in this repo and embedded into the firmware image.
+  # Path is relative to this config directory. Swap for another model from
+  # https://github.com/nliaudat/digit_recognizer if you like — see models/README.
+  # v40: 99.06% acc, ~1300 ms inference, ~106 KB footprint.
+  model: "models/digit_recognizer_v40_quantized_integer_quant_uint8.tflite"
+
+  update_interval: 60s
+
+  debug: false
+  debug_image: false
+  debug_image_out_serial: false
+  debug_memory: false
+  debug_timing: false
+
+  # Live preview of what the AI sees. Needs web_server + the drawing subsystem;
+  # off by default to save memory. See docs/CALIBRATION.md.
+  generate_preview: false
+
+  crop_zones_global: ${id_prefix}_crop_zones
+  flash_light_controller: ${id_prefix}_flash_controller
+
+  value_sensor: ${id_prefix}_meter_value
+  confidence_sensor: ${id_prefix}_meter_confidence
+  inference_logs: ${id_prefix}_inference_logs
+  main_logs: ${id_prefix}_main_logs
+  total_inference_time_sensor: ${id_prefix}_inference_time
+  capture_to_publish_time_sensor: ${id_prefix}_capture_to_publish_time
+
+  unload_button: ${id_prefix}_unload_btn
+  reload_button: ${id_prefix}_reload_btn
+
+# --------------------------------------------------------------------------
+# Includes
+# --------------------------------------------------------------------------
+packages:
+  # Board (XIAO ESP32-S3 Sense): pins, PSRAM, flash, LEDs.
+  - !include boards/board_Seeed_Studio_XIAO_ESP32-S3_sense.yaml
+
+  # Per-component Home Assistant controls (runtime tuning entities).
+  - !include controls/meter_reader_tflite_controls.yaml
+  - !include controls/value_validator_controls.yaml
+  - !include controls/flash_light_controller_controls.yaml
+  - !include controls/esp32_camera_utils_controls.yaml
+
+  # Camera.
+  - !include camera_options.yaml
+  - !include esp32_camera.yaml
+
+  # Connectivity: Wi-Fi + MQTT discovery to Home Assistant.
+  - !include wifi.yaml
+  - !include mqtt.yaml
+
+  # Misc.
+  - !include globals.yaml
+  - !include switch_others.yaml
+  - !include sensor_others.yaml
+  - !include logger.yaml
+  - !include time.yaml

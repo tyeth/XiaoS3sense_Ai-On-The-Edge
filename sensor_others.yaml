@@ -1,0 +1,31 @@
+# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+sensor:
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    id: ${id_prefix}_uptime_sensor
+    update_interval: 5min
+    internal: true
+    on_raw_value:
+      then:
+        - text_sensor.template.publish:
+            id: ${id_prefix}_uptime_human
+            state: !lambda |-
+              int seconds = round(id(${id_prefix}_uptime_sensor).get_raw_state());
+              int days = seconds / (24 * 3600);
+              seconds = seconds % (24 * 3600);
+              int hours = seconds / 3600;
+              seconds = seconds % 3600;
+              int minutes = seconds /  60;
+              seconds = seconds % 60;
+              return (
+                (days ? to_string(days) + "d " : "") +
+                (hours ? to_string(hours) + "h " : "") +
+                (minutes ? to_string(minutes) + "m " : "") +
+                (to_string(seconds) + "s")
+              ).c_str();
+
+text_sensor:
+  - platform: template
+    name: "${friendly_name} uptime"
+    id: ${id_prefix}_uptime_human
+    icon: mdi:clock-start

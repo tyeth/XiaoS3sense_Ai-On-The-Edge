@@ -1,0 +1,10 @@
+# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+globals:
+  # When true, a config dump runs after camera parameter changes (setup aid).
+  - id: ${id_prefix}_debug
+    type: bool
+    initial_value: 'false'
+  # Tracks whether camera parameters changed, to trigger a live update.
+  - id: ${id_prefix}_espcam_update
+    type: bool
+    initial_value: 'false'

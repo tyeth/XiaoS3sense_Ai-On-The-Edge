@@ -1,0 +1,25 @@
+# ESP32 Camera Utils — runtime services (camera windowing).
+# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+# The upstream file also defines many optional HA number/switch entities for
+# rotation/scaler/cropper — commented out there to keep the entity count low.
+# Add them from upstream if you need live crop/scale/rotate tuning.
+
+api:
+  services:
+    - service: set_camera_window
+      variables:
+        offset_x: int
+        offset_y: int
+        width: int
+        height: int
+      then:
+        - lambda: |-
+            if (offset_x >= 0 && offset_y >= 0 && width > 0 && height > 0) {
+              id(${id_prefix}_camera_utils)->set_camera_window(offset_x, offset_y, width, height);
+            }
+
+    - service: reset_camera_window
+      then:
+        - lambda: |-
+            int width, height;
+            id(${id_prefix}_camera_utils)->reset_window(width, height);
