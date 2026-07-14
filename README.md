@@ -65,8 +65,14 @@ editor — nothing to install, no `secrets.yaml` in the repo.
    pulls this whole repo in as a package:
    ```yaml
    packages:
-     meter_ocr: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
+     meter_ocr:
+       url: https://github.com/tyeth/XiaoS3sense_Ai-On-The-Edge
+       ref: main
+       files: [config.yaml]
+       refresh: 0s
    ```
+   The digit model is fetched by URL at build time (via the forked component's
+   `external_files` support), so nothing needs copying into the config dir.
 3. Secrets: only the standard `wifi_ssid` / `wifi_password` are required, and
    the Builder already has them. MQTT broker/credentials default via
    substitutions in the wrapper — edit them there for your broker.
@@ -116,11 +122,12 @@ repo (or just use two config files), and in each set a unique `name` /
 
 ## Status
 
-This is a configuration layer assembled from the upstream project's
-field-proven files, adapted for the XIAO + OV5640 + MQTT. It has **not yet been
-hardware-flashed from this exact repo** — run `esphome compile` (CI also does
-this on every push) to validate before relying on it, and expect to spend time
-on crop-zone calibration and camera focus/lighting. Issues & PRs welcome.
+The full config **validates cleanly** (`esphome config` → "Configuration is
+valid!") when pulled as a remote package in the ESPHome Builder, including the
+URL-fetched model. It has **not yet been hardware-flashed from this exact repo**,
+so expect to spend time on crop-zone calibration and camera focus/lighting
+before readings are trustworthy. CI runs a full `esphome compile` on every push.
+Issues & PRs welcome.
 
 ## License
 

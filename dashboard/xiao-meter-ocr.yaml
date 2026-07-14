@@ -25,7 +25,11 @@ substitutions:
   mqtt_password: ""
 
 packages:
-  meter_ocr: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
+  meter_ocr:
+    url: https://github.com/tyeth/XiaoS3sense_Ai-On-The-Edge
+    ref: main
+    files: [config.yaml]
+    refresh: 0s   # always re-fetch main; set to e.g. 1d once you've pinned a version
 
 # ---------------------------------------------------------------------------
 # Secrets: only the standard wifi_ssid / wifi_password are required — the
