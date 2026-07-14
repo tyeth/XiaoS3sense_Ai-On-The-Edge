@@ -1,18 +1,22 @@
-# Vendored from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
+# Uses the standard ESPHome secret names (wifi_ssid / wifi_password) that the
+# ESPHome Builder creates by default, so it compiles with no extra secrets.
+# Vendored/adapted from nliaudat/esphome_ai_component (MIT). See ATTRIBUTION.md.
 wifi:
   id: ${id_prefix}_wifi_component
-  networks:
-    - ssid: !secret wifi_ssid_1
-      password: !secret wifi_password_1
-      priority: 1
-    - ssid: !secret wifi_ssid_2
-      password: !secret wifi_password_2
-      priority: 2
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
 
-  # Fallback captive-portal hotspot if Wi-Fi fails.
+  # Optional second network — uncomment and add the secrets if you want it.
+  # networks:
+  #   - ssid: !secret wifi_ssid
+  #     password: !secret wifi_password
+  #   - ssid: !secret wifi_ssid_2
+  #     password: !secret wifi_password_2
+
+  # Fallback captive-portal hotspot if Wi-Fi fails. Change this password.
   ap:
-    ssid: "${name} Flbck"
-    password: !secret fallback_hotspot_password
+    ssid: "${name} Fallback"
+    password: "meterocr-fallback"
 
 sensor:
   - platform: wifi_signal

@@ -67,8 +67,9 @@ editor — nothing to install, no `secrets.yaml` in the repo.
    packages:
      meter_ocr: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
    ```
-3. In the Builder's **Secrets** editor, add the Wi-Fi + MQTT secrets listed at
-   the bottom of that file.
+3. Secrets: only the standard `wifi_ssid` / `wifi_password` are required, and
+   the Builder already has them. MQTT broker/credentials default via
+   substitutions in the wrapper — edit them there for your broker.
 4. **Install** → *Plug into this computer* (first flash over USB) or *Wirelessly*
    (OTA thereafter). Hold **BOOT** 2-3 s for the first serial flash.
 

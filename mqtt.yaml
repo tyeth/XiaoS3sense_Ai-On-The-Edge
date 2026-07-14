@@ -1,24 +1,22 @@
 # MQTT connection to the Home Assistant broker, with auto-discovery.
 #
-# This publishes every sensor/switch/number entity to Home Assistant via the
-# MQTT discovery mechanism, so the device shows up automatically under the MQTT
-# integration — no YAML changes in HA required.
+# Broker/credentials come from substitutions (see config.yaml) so this compiles
+# out of the box with no MQTT secrets. Override the substitutions per device, or
+# point them at !secret values for production.
 #
 # Broker vs. HA URL: Home Assistant's web UI at
 #   https://homeassistant.gdenu.fi:8123   (self-signed / invalid cert)
 # is NOT the MQTT broker. MQTT talks to the Mosquitto broker, normally on the
 # same host at port 1883 (plaintext). The 8123 certificate is irrelevant here.
-# Set mqtt_broker in secrets.yaml to the broker host (e.g. homeassistant.gdenu.fi).
 mqtt:
   id: ${id_prefix}_mqtt_client
-  broker: !secret mqtt_broker
-  port: 1883
-  username: !secret mqtt_username
-  password: !secret mqtt_password
+  broker: ${mqtt_broker}
+  port: ${mqtt_port}
+  username: ${mqtt_username}
+  password: ${mqtt_password}
   discovery: true
   discovery_prefix: homeassistant
   topic_prefix: ${name}
-  # Keep the device visible in HA even between the slow (1 min) sensor updates.
   birth_message:
     topic: ${name}/status
     payload: online
@@ -29,8 +27,7 @@ mqtt:
   # --- Optional: TLS to a broker on port 8883 -------------------------------
   # The broker here presents an invalid/self-signed certificate. ESPHome (esp-idf)
   # validates against a CA, so plaintext 1883 on the trusted LAN is the simple
-  # path above. To use TLS, switch port to 8883 and provide the broker's CA:
-  #   port: 8883
+  # path. To use TLS, set mqtt_port to 8883 and provide the broker's CA:
   #   certificate_authority: |
   #     -----BEGIN CERTIFICATE-----
   #     ...your broker CA / self-signed cert...

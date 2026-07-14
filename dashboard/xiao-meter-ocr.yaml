@@ -18,18 +18,18 @@ substitutions:
   meter_device_class: energy
   meter_state_class: total_increasing
 
+  # MQTT broker + credentials (override for your setup). Leaving user/pass empty
+  # connects anonymously. For production, replace with !secret values.
+  mqtt_broker: homeassistant.gdenu.fi
+  mqtt_username: ""
+  mqtt_password: ""
+
 packages:
   meter_ocr: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
 
 # ---------------------------------------------------------------------------
-# Add these to your ESPHome Builder secrets (Builder → Secrets editor):
-#
-#   wifi_ssid_1: "your-ssid"
-#   wifi_password_1: "your-wifi-password"
-#   wifi_ssid_2: "backup-ssid"
-#   wifi_password_2: "backup-wifi-password"
-#   fallback_hotspot_password: "meter-ocr-hotspot"
-#   mqtt_broker: "homeassistant.gdenu.fi"
-#   mqtt_username: "mqtt-user"
-#   mqtt_password: "mqtt-password"
+# Secrets: only the standard wifi_ssid / wifi_password are required — the
+# ESPHome Builder already has these. Nothing else needs adding to compile.
+# For a real MQTT broker with auth, set mqtt_username / mqtt_password above
+# (or wire them to !secret entries).
 # ---------------------------------------------------------------------------

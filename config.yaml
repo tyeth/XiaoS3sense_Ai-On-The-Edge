@@ -69,6 +69,14 @@ substitutions:
   camera_max_framerate: 1fps
   camera_idle_framerate: 0.2fps
 
+  # ---- MQTT broker (Home Assistant discovery) ------------------------------
+  # Defaults let it compile with no MQTT secrets. Override per device, or point
+  # these at !secret values for production. Empty user/pass = anonymous.
+  mqtt_broker: homeassistant.gdenu.fi
+  mqtt_port: "1883"
+  mqtt_username: ""
+  mqtt_password: ""
+
   # ---- Time / weekly reboot ------------------------------------------------
   TZ: Europe/Zurich
   reboot_days_of_week: MON
