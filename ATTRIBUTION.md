@@ -7,8 +7,15 @@ This project stands on the shoulders of excellent prior work.
 
 The on-device inference engine — the `meter_reader_tflite`, `tflite_micro_helper`,
 `esp32_camera_utils`, `flash_light_controller`, and `value_validator` ESPHome
-components — comes from this project and is pulled in unmodified via
-`external_components` in [`config.yaml`](config.yaml).
+components — comes from this project. We pull them via `external_components` in
+[`config.yaml`](config.yaml) from a light fork,
+[tyeth/esphome_ai_component](https://github.com/tyeth/esphome_ai_component)
+(`url-model-support` branch). The fork carries a single change on top of
+upstream: `meter_reader_tflite` accepts a **URL** for its `model:` option and
+downloads it at build time via ESPHome's `external_files` helper (the same
+mechanism `micro_wake_word` uses). This lets the model be referenced by URL so
+it doesn't need to be copied into the ESPHome config directory when this repo is
+consumed as a remote package. Intended to be offered back upstream.
 
 The YAML include files in this repository (the board definition, camera config,
 per-component control entities, logger/time/wifi/globals, etc.) are **vendored

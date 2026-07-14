@@ -27,12 +27,16 @@ dashboard_import:
   package_import_url: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config.yaml@main
   import_full_config: false
 
-# Pull the C++ components straight from upstream so they stay maintained.
+# Components come from our fork of nliaudat/esphome_ai_component. The fork's
+# url-model-support branch adds one thing on top of upstream: meter_reader_tflite
+# accepts a URL for `model:` (downloaded at build time via ESPHome's
+# external_files), so the .tflite doesn't have to be copied into the config dir.
+# Everything else tracks upstream. See ATTRIBUTION.md.
 external_components:
   - source:
       type: git
-      url: https://github.com/nliaudat/esphome_ai_component
-      ref: main
+      url: https://github.com/tyeth/esphome_ai_component
+      ref: url-model-support
     components:
       - meter_reader_tflite
       - tflite_micro_helper
@@ -151,11 +155,14 @@ meter_reader_tflite:
   validator: ${id_prefix}_validator
   camera_id: ${id_prefix}_espcam
 
-  # The model is committed in this repo and embedded into the firmware image.
-  # Path is relative to this config directory. Swap for another model from
-  # https://github.com/nliaudat/digit_recognizer if you like — see models/README.
+  # The model is committed in this repo (models/) and referenced here by URL so
+  # it works even when this config is pulled as a remote github:// package — the
+  # forked component downloads it at build time and embeds it in the firmware.
+  # For a local checkout you can instead use a relative path:
+  #   model: "models/digit_recognizer_v40_quantized_integer_quant_uint8.tflite"
+  # Swap for another model from https://github.com/nliaudat/digit_recognizer.
   # v40: 99.06% acc, ~1300 ms inference, ~106 KB footprint.
-  model: "models/digit_recognizer_v40_quantized_integer_quant_uint8.tflite"
+  model: "https://raw.githubusercontent.com/tyeth/XiaoS3sense_Ai-On-The-Edge/main/models/digit_recognizer_v40_quantized_integer_quant_uint8.tflite"
 
   update_interval: 60s
 
