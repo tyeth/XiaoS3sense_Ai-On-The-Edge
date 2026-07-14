@@ -57,6 +57,11 @@ substitutions:
   # (typical low-side N-MOSFET / active-high driver); "true" = active-low.
   flash_led_pin: GPIO4
   flash_led_inverted: "false"
+  # NeoPixel (WS2812) illumination on the MOSI pin (GPIO9 / D10). Used as the
+  # flash by default (see flash_light_controller in config.yaml). Gives
+  # adjustable brightness + colour from Home Assistant for better OCR contrast.
+  neopixel_pin: GPIO9
+  neopixel_count: "1"
 
 esp32:
   board: ${board}
@@ -95,9 +100,24 @@ psram:
   speed: 80MHz
 
 light:
+  # NeoPixel illumination on MOSI (GPIO9) — the default flash source. Set its
+  # colour/brightness from HA; the flash controller just turns it on/off, so it
+  # uses whatever state you leave it in (defaults to white at full brightness).
+  - platform: esp32_rmt_led_strip
+    name: "${name} Flash NeoPixel"
+    id: ${id_prefix}_flash_neopixel
+    pin: ${neopixel_pin}
+    num_leds: ${neopixel_count}
+    chipset: WS2812
+    rgb_order: GRB
+    default_transition_length: 0s   # snap on/off — it's a flash, not a fade
+    restore_mode: ALWAYS_OFF
+    icon: "mdi:alarm-light"
+
+  # Alternative flash: a plain on/off output on GPIO4 for an external MOSFET+LED.
   - platform: binary
     output: ${id_prefix}_flash_light_output
-    name: "${name} Flash LED"
+    name: "${name} Flash LED (GPIO)"
     id: ${id_prefix}_flash
     icon: "mdi:alarm-light"
 

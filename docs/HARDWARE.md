@@ -20,11 +20,24 @@ Defined in [`boards/board_Seeed_Studio_XIAO_ESP32-S3_sense.yaml`](../boards/boar
 | D0..D7 | 15,17,18,16,14,12,11,48 | | PWDN/RESET | not wired |
 
 ## Flash / illumination
-The XIAO ESP32-S3 Sense has **no usable bright flash LED** (just a dim user LED).
-The firmware drives a flash output on **GPIO4** (a free header pin), intended for
-**external circuitry** — e.g. a small N-channel MOSFET switching an LED (or LED
-ring) from 3V3/5V, gate to GPIO4 through a ~100 Ω resistor, plus the LED's series
-resistor. Make it configurable in your device substitutions:
+The XIAO ESP32-S3 Sense has **no usable bright flash LED** (just a dim user LED),
+so illumination is external. Two options are configured; the flash controller
+points at one via `flash_light:` in [`config.yaml`](../config.yaml).
+
+**Default — NeoPixel (WS2812) on MOSI (GPIO9 / D10).** Wire a NeoPixel's data in
+to GPIO9 (power from 5V/3V3 + GND). It's exposed as the *Flash NeoPixel* light,
+so you can set **brightness and colour from Home Assistant** for the best OCR
+contrast; the controller just switches it on/off around each capture. Configure:
+
+```yaml
+substitutions:
+  neopixel_pin: GPIO9
+  neopixel_count: "1"
+```
+
+**Alternative — plain LED on GPIO4 via a MOSFET.** A small N-channel MOSFET
+switching an LED (or ring) from 3V3/5V, gate to GPIO4 through ~100 Ω, LED series
+resistor as usual. Point the controller at it with `flash_light: ${id_prefix}_flash`.
 
 ```yaml
 substitutions:

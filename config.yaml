@@ -137,10 +137,12 @@ esp32_camera_utils:
   debug: false
   debug_memory: false
 
-# Optional on-board LED as a "flash" to stabilise exposure before capture.
+# Flash to illuminate the meter + stabilise exposure before capture. Defaults to
+# the NeoPixel on MOSI (GPIO9). For the GPIO4 external-MOSFET output instead, set
+# flash_light: ${id_prefix}_flash. Pre/Post times are runtime-tunable entities.
 flash_light_controller:
   id: ${id_prefix}_flash_controller
-  flash_light: ${id_prefix}_flash
+  flash_light: ${id_prefix}_flash_neopixel
   flash_pre_time: 7000ms
   flash_post_time: 200ms
   debug: false
