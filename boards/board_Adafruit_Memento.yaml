@@ -32,7 +32,11 @@ substitutions:
   # Camera (OV5640) — adafruit_camera_esp32s3 variant
   external_clock_pin: GPIO8
   external_clock_frequency: 20MHz
-  i2c_pins_sda: GPIO34        # camera SCCB shares the main I2C
+  # Camera SCCB shares the main I2C. ESPHome warns that GPIO33/34 are the PSRAM
+  # pins on OCTAL (S3R8) modules — safe to ignore here: the MEMENTO is QUAD PSRAM
+  # (R2), which is exactly why Adafruit routes I2C on these pins. (If you ever set
+  # psram: mode: octal, that warning becomes a real conflict.)
+  i2c_pins_sda: GPIO34
   i2c_pins_scl: GPIO33
   data_pins: [GPIO13, GPIO15, GPIO16, GPIO14, GPIO12, GPIO10, GPIO9, GPIO7]  # D0..D7 = Y2..Y9
   vsync_pin: GPIO5
