@@ -87,9 +87,9 @@ light:
     id: ${id_prefix}_flash_neopixel
     pin: ${neopixel_pin}
     num_leds: ${neopixel_count}
-    chipset: WS2812        # 800 kHz NeoPixel (NEO_GRBW)
+    chipset: SK6812        # RGBW pixels @ 800 kHz are SK6812 (NEO_GRBW), not WS2812
     rgb_order: GRB
-    is_rgbw: true          # the ring is RGBW
+    is_rgbw: true          # the ring is RGBW (has a dedicated white channel)
     default_transition_length: 0s
     restore_mode: RESTORE_DEFAULT_OFF
     icon: "mdi:alarm-light"
