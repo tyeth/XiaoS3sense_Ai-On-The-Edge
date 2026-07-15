@@ -52,7 +52,11 @@ substitutions:
 esp32:
   board: ${board}
   cpu_frequency: 240MHZ
-  flash_size: 8MB
+  # This MEMENTO reports a 4 MB flash chip; an 8 MB partition table overflows it
+  # (partition load error / won't boot). 4 MB is valid on 4 MB and larger chips.
+  # The firmware (~1.6 MB) fits a 4 MB dual-OTA layout, but it's tight — if a
+  # build overflows an app slot, drop OTA or use a custom single-app partition.
+  flash_size: 4MB
   framework:
     type: ${framework}
     version: recommended
