@@ -1,0 +1,105 @@
+# Adafruit MEMENTO (ESP32-S3 "PyCamera") board definition.
+# https://www.adafruit.com/product/5420   variant: adafruit_camera_esp32s3
+#
+# OV5640 autofocus camera, 1.54" TFT (unused here), microSD, and an onboard
+# 8-LED RGBW NeoPixel *ring* on A1/GPIO18 used as the flash. Unlike the XIAO,
+# the camera power-down pin IS wired (GPIO21), so the sensor can be idled.
+#
+# Camera pins from the Arduino variant pins_arduino.h (adafruit_camera_esp32s3).
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: ${esphome_min_version}
+  name_add_mac_suffix: False
+  project:
+    name: "tyeth.xiao-meter-ocr"
+    version: "${revision}"
+  platformio_options:
+    board_build.extra_flags:
+      - -DBOARD_HAS_PSRAM
+      - -DTF_LITE_STATIC_MEMORY
+      - -DTF_LITE_DISABLE_X86_NEON
+      - -DESP_NN
+    board_build.f_flash: 80000000L
+    board_build.flash_mode: qio
+    board_build.memory_type: qio_qspi   # 2 MB QUAD PSRAM (not octal like the XIAO)
+
+substitutions:
+  board: esp32-s3-devkitc-1   # generic S3 base; "adafruit_camera_esp32s3" may also work
+  framework: esp-idf
+
+  # Camera (OV5640) — adafruit_camera_esp32s3 variant
+  external_clock_pin: GPIO8
+  external_clock_frequency: 20MHz
+  i2c_pins_sda: GPIO34        # camera SCCB shares the main I2C
+  i2c_pins_scl: GPIO33
+  data_pins: [GPIO13, GPIO15, GPIO16, GPIO14, GPIO12, GPIO10, GPIO9, GPIO7]  # D0..D7 = Y2..Y9
+  vsync_pin: GPIO5
+  href_pin: GPIO6
+  pixel_clock_pin: GPIO11
+  camera_reset_pin: GPIO47
+  camera_pwdn_pin: GPIO21
+
+  # Onboard RGBW NeoPixel ring (the flash) on A1 / GPIO18, 8 LEDs.
+  neopixel_pin: GPIO18
+  neopixel_count: "8"
+
+esp32:
+  board: ${board}
+  cpu_frequency: 240MHZ
+  flash_size: 8MB
+  framework:
+    type: ${framework}
+    version: recommended
+    sdkconfig_options:
+      CONFIG_COMPILER_OPTIMIZATION_PERF: y
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB: "y"
+      CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY: "y"
+      CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP: "y"
+      CONFIG_MBEDTLS_EXTERNAL_MEM_ALLOC: "y"
+      CONFIG_MBEDTLS_SSL_PROTO_TLS1_3: "y"
+      CONFIG_TASK_WDT: "y"
+      CONFIG_TASK_WDT_TIMEOUT_S: "30"
+      CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0: "n"
+      CONFIG_SPIRAM_SUPPORT: y
+      CONFIG_SPIRAM_USE_CAPS_ALLOC: y
+      CONFIG_SPIRAM_USE_MALLOC: y
+      CONFIG_LOG_DEFAULT_LEVEL: "0"
+      CONFIG_CAMERA_TASK_STACK_SIZE: "8192"
+      CONFIG_FREERTOS_HZ: "1000"
+      CONFIG_ESP32S3_SPIRAM_SUPPORT: y
+      CONFIG_SPIRAM_SPEED_80M: y
+
+psram:
+  mode: quad          # MEMENTO has 2 MB QUAD PSRAM. If PSRAM isn't detected on
+  speed: 80MHz        # your unit, try mode: octal.
+
+# The flash: onboard 8-LED RGBW NeoPixel ring on A1/GPIO18. Same entity id as the
+# XIAO's pixel (${id_prefix}_flash_neopixel) so the shared flash controller in
+# ai_stack.yaml drives it unchanged. Set colour/brightness from HA.
+light:
+  - platform: esp32_rmt_led_strip
+    name: "${name} Flash Ring"
+    id: ${id_prefix}_flash_neopixel
+    pin: ${neopixel_pin}
+    num_leds: ${neopixel_count}
+    chipset: WS2812        # 800 kHz NeoPixel (NEO_GRBW)
+    rgb_order: GRB
+    is_rgbw: true          # the ring is RGBW
+    default_transition_length: 0s
+    restore_mode: RESTORE_DEFAULT_OFF
+    icon: "mdi:alarm-light"
+
+  # Optional: the single onboard status NeoPixel on GPIO1 (RGB). Uncomment to use.
+  # - platform: esp32_rmt_led_strip
+  #   name: "${name} Status Pixel"
+  #   id: ${id_prefix}_status_pixel
+  #   pin: GPIO1
+  #   num_leds: 1
+  #   chipset: WS2812
+  #   rgb_order: GRB
+  #   restore_mode: ALWAYS_OFF

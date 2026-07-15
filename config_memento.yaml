@@ -1,0 +1,104 @@
+# =============================================================================
+#  Adafruit MEMENTO (ESP32-S3 PyCamera) — on-device meter-digit OCR → HA
+# =============================================================================
+#  Same project as config.yaml, but targeting the Adafruit MEMENTO instead of
+#  the XIAO ESP32-S3 Sense: OV5640 autofocus camera, and the onboard 8-LED RGBW
+#  NeoPixel ring (A1/GPIO18) as the flash. The AI/capture stack (ai_stack.yaml)
+#  and all the HA controls are shared with the XIAO build.
+#
+#  Use as a remote package (ESPHome Builder), or locally. See README.
+# =============================================================================
+
+dashboard_import:
+  package_import_url: github://tyeth/XiaoS3sense_Ai-On-The-Edge/config_memento.yaml@main
+  import_full_config: false
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/tyeth/esphome_ai_component
+      ref: url-model-support
+    components:
+      - meter_reader_tflite
+      - tflite_micro_helper
+      - esp32_camera_utils
+      - flash_light_controller
+      - value_validator
+    refresh: 0s
+
+substitutions:
+  name: memento-meter-ocr
+  friendly_name: "Memento Meter OCR"
+  id_prefix: "memento_meter"
+
+  revision: "1.0"
+  esphome_min_version: "2025.12.0"
+
+  # ---- Meter identity ----
+  meter_unit: kWh
+  meter_device_class: energy
+  meter_state_class: total_increasing
+
+  # ---- Camera framebuffer ----
+  camera_pixel_format: JPEG
+  camera_resolution: 640x480
+  camera_jpeg_quality: 10
+  camera_max_framerate: 1fps
+  camera_idle_framerate: 0.2fps
+
+  # ---- MQTT broker (only used if you enable mqtt.yaml below) ----
+  mqtt_broker: homeassistant.gdenu.fi
+  mqtt_port: "1883"
+  mqtt_username: ""
+  mqtt_password: ""
+
+  # ---- Time / weekly reboot ----
+  TZ: Europe/London
+  reboot_days_of_week: MON
+  reboot_hours: 5
+  reboot_minutes: 0
+  reboot_seconds: 0
+
+preferences:
+  flash_write_interval: 60min
+
+ota:
+  - platform: esphome
+
+safe_mode:
+
+# HA transport = native ESPHome API (auto-discovered). MQTT is the alternative
+# (uncomment the include below). Use one or the other, not both.
+api:
+  reboot_timeout: 0s
+
+packages:
+  # Board (Adafruit MEMENTO): ESP32-S3, PSRAM, camera pins, RGBW ring flash.
+  - !include boards/board_Adafruit_Memento.yaml
+
+  # Shared AI + capture stack.
+  - !include ai_stack.yaml
+
+  # Per-component Home Assistant controls.
+  - !include controls/meter_reader_tflite_controls.yaml
+  - !include controls/value_validator_controls.yaml
+  - !include controls/flash_light_controller_controls.yaml
+  - !include controls/esp32_camera_utils_controls.yaml
+
+  # Camera (MEMENTO variant — reset/power-down pins wired).
+  - !include camera_options.yaml
+  - !include esp32_camera_memento.yaml
+
+  # Connectivity.
+  - !include wifi.yaml
+  # - !include mqtt.yaml   # alternative transport; set mqtt_* + add via MQTT only
+
+  # Local web UI for calibration preview.
+  - !include web_server.yaml
+
+  # Misc.
+  - !include globals.yaml
+  - !include switch_others.yaml
+  - !include sensor_others.yaml
+  - !include logger.yaml
+  - !include time.yaml

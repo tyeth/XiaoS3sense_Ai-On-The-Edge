@@ -107,105 +107,9 @@ safe_mode:
 api:
   reboot_timeout: 0s              # don't reboot if the API connection drops
 
-# --------------------------------------------------------------------------
-# Crop zones — where the digits are in the frame.
-#
-# One [x1, y1, x2, y2] box per digit, left-to-right. Start with an empty list,
-# flash, look at the preview, then fill this in (see docs/CALIBRATION.md). You
-# can also set it live via the esphome.<name>_set_crop_zones service.
-# --------------------------------------------------------------------------
-globals:
-  - id: ${id_prefix}_crop_zones
-    type: std::string
-    max_restore_data_length: 254
-    initial_value: "\"[]\""
-    # Example for an 8-digit meter (replace with your own coordinates):
-    # initial_value: '"[[9, 10, 49, 74], [64, 10, 104, 74], [118, 9, 158, 81], [173, 9, 213, 81], [230, 9, 270, 81], [286, 10, 326, 82], [339, 11, 379, 83], [394, 10, 434, 82]]"'
-
-# --------------------------------------------------------------------------
-# AI components
-# --------------------------------------------------------------------------
-tflite_micro_helper:
-  debug: false
-
-esp32_camera_utils:
-  id: ${id_prefix}_camera_utils
-  camera_id: ${id_prefix}_espcam
-  # Drawing subsystem must be on at build time for the annotated calibration
-  # preview (toggle the "Setup Mode (Preview)" switch at runtime to use it).
-  enable_drawing: true
-  debug: false
-  debug_memory: false
-
-# Flash to illuminate the meter + stabilise exposure before capture. Defaults to
-# the NeoPixel on MOSI (GPIO9). For the GPIO4 external-MOSFET output instead, set
-# flash_light: ${id_prefix}_flash. Pre/Post times are runtime-tunable entities.
-flash_light_controller:
-  id: ${id_prefix}_flash_controller
-  flash_light: ${id_prefix}_flash_neopixel
-  flash_pre_time: 7000ms
-  flash_post_time: 200ms
-  debug: false
-
-value_validator:
-  id: ${id_prefix}_validator
-  allow_negative_rates: false
-  max_absolute_diff: 300
-  enable_smart_validation: true
-  smart_validation_window: 5
-  high_confidence_threshold: 0.90
-  per_digit_confidence_threshold: 0.85
-  strict_confidence_check: true
-  max_history_size: 50kB
-
-meter_reader_tflite:
-  id: ${id_prefix}_meter_reader
-  validator: ${id_prefix}_validator
-  camera_id: ${id_prefix}_espcam
-
-  # The model is committed in this repo (models/) and referenced here by URL so
-  # it works even when this config is pulled as a remote github:// package — the
-  # forked component downloads it at build time and embeds it in the firmware.
-  # For a local checkout you can instead use a relative path:
-  #   model: "models/digit_recognizer_v40_quantized_integer_quant_uint8.tflite"
-  # Swap for another model from https://github.com/nliaudat/digit_recognizer.
-  # v40: 99.06% acc, ~1300 ms inference, ~106 KB footprint.
-  model: "https://raw.githubusercontent.com/tyeth/XiaoS3sense_Ai-On-The-Edge/main/models/digit_recognizer_v40_quantized_integer_quant_uint8.tflite"
-
-  update_interval: 60s
-
-  # Tensor arena for the TFLite interpreter (in PSRAM). The model's .txt sidecar
-  # estimates ~18KB, but TFLite Micro actually needs ~31KB usable on this build
-  # and allocation fails below that — so pin a generous value. The model's total
-  # tensor memory is ~106KB; 512KB leaves plenty of headroom (8MB PSRAM). Tune
-  # down if you like, but keep it well above ~64KB.
-  tensor_arena_size: "512KB"
-
-  debug: false
-  debug_image: false
-  debug_image_out_serial: false
-  debug_memory: false
-  debug_timing: false
-
-  # Live preview of what the AI sees. web_server + the drawing subsystem are
-  # enabled (below / in web_server.yaml), so you can flip this ON at runtime with
-  # the "Setup Mode (Preview)" switch — no recompile. Left off by default to save
-  # CPU/RAM in normal operation. See docs/CALIBRATION.md.
-  generate_preview: false
-  show_crop_areas: true
-
-  crop_zones_global: ${id_prefix}_crop_zones
-  flash_light_controller: ${id_prefix}_flash_controller
-
-  value_sensor: ${id_prefix}_meter_value
-  confidence_sensor: ${id_prefix}_meter_confidence
-  inference_logs: ${id_prefix}_inference_logs
-  main_logs: ${id_prefix}_main_logs
-  total_inference_time_sensor: ${id_prefix}_inference_time
-  capture_to_publish_time_sensor: ${id_prefix}_capture_to_publish_time
-
-  unload_button: ${id_prefix}_unload_btn
-  reload_button: ${id_prefix}_reload_btn
+# The board-agnostic AI + capture stack (crop-zones global, tflite_micro_helper,
+# esp32_camera_utils, flash_light_controller, value_validator, meter_reader_tflite)
+# lives in ai_stack.yaml, shared with the other board entrypoints. See packages.
 
 # --------------------------------------------------------------------------
 # Includes
@@ -213,6 +117,9 @@ meter_reader_tflite:
 packages:
   # Board (XIAO ESP32-S3 Sense): pins, PSRAM, flash, LEDs.
   - !include boards/board_Seeed_Studio_XIAO_ESP32-S3_sense.yaml
+
+  # Shared AI + capture stack.
+  - !include ai_stack.yaml
 
   # Per-component Home Assistant controls (runtime tuning entities).
   - !include controls/meter_reader_tflite_controls.yaml

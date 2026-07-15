@@ -1,0 +1,48 @@
+# Camera for the Adafruit MEMENTO (OV5640). Same as esp32_camera.yaml but with
+# the reset_pin / power_down_pin wired (GPIO47 / GPIO21) — the MEMENTO routes
+# both, so the sensor can be reset and powered down properly.
+# https://esphome.io/components/esp32_camera.html
+
+i2c:
+  sda: ${i2c_pins_sda}
+  scl: ${i2c_pins_scl}
+  id: ${id_prefix}_bus_camera
+
+esp32_camera:
+  id: ${id_prefix}_espcam
+  name: ${friendly_name}_camera
+  external_clock:
+    pin: ${external_clock_pin}
+    frequency: ${external_clock_frequency}
+  i2c_id: ${id_prefix}_bus_camera
+  data_pins: ${data_pins}
+  vsync_pin: ${vsync_pin}
+  href_pin: ${href_pin}
+  pixel_clock_pin: ${pixel_clock_pin}
+  reset_pin: ${camera_reset_pin}
+  power_down_pin: ${camera_pwdn_pin}
+
+  # ---- Framebuffer (fixed at boot) ----
+  resolution: ${camera_resolution}
+  jpeg_quality: ${camera_jpeg_quality}
+  max_framerate: ${camera_max_framerate}
+  idle_framerate: ${camera_idle_framerate}
+  frame_buffer_location: PSRAM
+  pixel_format: JPEG
+
+  # ---- Runtime-adjustable (exposed in HA via camera_options.yaml) ----
+  vertical_flip: false
+  horizontal_mirror: false
+  contrast: 0
+  brightness: 0
+  saturation: 0
+  special_effect: NONE
+  aec_mode: AUTO
+  aec2: True
+  ae_level: 0
+  aec_value: 580
+  agc_mode: AUTO
+  agc_gain_ceiling: 2X
+  agc_value: 0
+  wb_mode: AUTO
+  test_pattern: False

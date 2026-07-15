@@ -1,0 +1,85 @@
+# Board-agnostic AI + capture stack, shared by every board entrypoint
+# (config.yaml, config_memento.yaml, ...). It assumes the board/camera includes
+# provide a camera with id ${id_prefix}_espcam and a flash light with id
+# ${id_prefix}_flash_neopixel. Nothing here is board-specific.
+
+# Crop zones — one [x1,y1,x2,y2] box per digit, left-to-right. Runtime-editable
+# via the "Set Crop Zones" text entity; persists (restore). See docs/CALIBRATION.md.
+globals:
+  - id: ${id_prefix}_crop_zones
+    type: std::string
+    max_restore_data_length: 254
+    initial_value: "\"[]\""
+
+tflite_micro_helper:
+  debug: false
+
+esp32_camera_utils:
+  id: ${id_prefix}_camera_utils
+  camera_id: ${id_prefix}_espcam
+  # Drawing subsystem on at build time for the annotated calibration preview
+  # (toggle "Setup Mode (Preview)" at runtime).
+  enable_drawing: true
+  debug: false
+  debug_memory: false
+
+# Flash to illuminate the meter + settle exposure/white-balance before capture.
+# Points at the light with id ${id_prefix}_flash_neopixel, which each board
+# defines as its own illumination (XIAO: SK6812 on GPIO9; Memento: RGBW ring).
+flash_light_controller:
+  id: ${id_prefix}_flash_controller
+  flash_light: ${id_prefix}_flash_neopixel
+  flash_pre_time: 7000ms
+  flash_post_time: 200ms
+  debug: false
+
+value_validator:
+  id: ${id_prefix}_validator
+  allow_negative_rates: false
+  max_absolute_diff: 300
+  enable_smart_validation: true
+  smart_validation_window: 5
+  high_confidence_threshold: 0.90
+  per_digit_confidence_threshold: 0.85
+  strict_confidence_check: true
+  max_history_size: 50kB
+
+meter_reader_tflite:
+  id: ${id_prefix}_meter_reader
+  validator: ${id_prefix}_validator
+  camera_id: ${id_prefix}_espcam
+
+  # Model committed in models/ and referenced by URL so it works when this config
+  # is pulled as a remote github:// package (forked component downloads + embeds
+  # it at build time). v40: 99.06% acc, ~1300 ms, ~106 KB.
+  model: "https://raw.githubusercontent.com/tyeth/XiaoS3sense_Ai-On-The-Edge/main/models/digit_recognizer_v40_quantized_integer_quant_uint8.tflite"
+
+  update_interval: 60s
+
+  # The model's .txt sidecar estimates ~18KB arena, but TFLite Micro needs ~31KB
+  # usable and fails below that — pin a generous value (model total tensor mem
+  # ~106KB). 512KB is safe on 8MB PSRAM; on a 2MB-PSRAM board (e.g. Memento) it
+  # still fits alongside the camera buffers, but drop toward ~128KB if memory is tight.
+  tensor_arena_size: "512KB"
+
+  debug: false
+  debug_image: false
+  debug_image_out_serial: false
+  debug_memory: false
+  debug_timing: false
+
+  generate_preview: false
+  show_crop_areas: true
+
+  crop_zones_global: ${id_prefix}_crop_zones
+  flash_light_controller: ${id_prefix}_flash_controller
+
+  value_sensor: ${id_prefix}_meter_value
+  confidence_sensor: ${id_prefix}_meter_confidence
+  inference_logs: ${id_prefix}_inference_logs
+  main_logs: ${id_prefix}_main_logs
+  total_inference_time_sensor: ${id_prefix}_inference_time
+  capture_to_publish_time_sensor: ${id_prefix}_capture_to_publish_time
+
+  unload_button: ${id_prefix}_unload_btn
+  reload_button: ${id_prefix}_reload_btn

@@ -53,6 +53,21 @@ Full-image capture + 8-digit inference runs in well under a second on the S3
 | OV5640 camera for XIAO ESP32-S3 Sense | 120° wide-angle, autofocus. Same FPC socket as the OV2640 |
 | A stable mount + lighting | See [docs/HARDWARE.md](docs/HARDWARE.md) |
 
+## Boards
+
+Two boards are supported, each with its own entrypoint (the AI stack is shared):
+
+| Board | Entrypoint | Camera | Flash |
+|-------|-----------|--------|-------|
+| Seeed **XIAO ESP32-S3 Sense** | [`config.yaml`](config.yaml) | OV5640 (external clock, no power-down) | SK6812 NeoPixel on GPIO9, or GPIO4 MOSFET LED |
+| Adafruit **MEMENTO** (PyCamera) | [`config_memento.yaml`](config_memento.yaml) | OV5640 autofocus (power-down wired) | onboard 8-LED RGBW NeoPixel ring (A1/GPIO18) |
+
+In the ESPHome Builder, use the matching wrapper in [`dashboard/`](dashboard/)
+(`xiao-meter-ocr.yaml` or `memento-meter-ocr.yaml`) — it just points the package
+at the right entrypoint. Adding a third board = a new `boards/board_*.yaml` (that
+defines the camera pins and a flash light with id `${id_prefix}_flash_neopixel`)
+plus a thin entrypoint that includes it and `ai_stack.yaml`.
+
 ## Quick start
 
 ### Option A — ESPHome Builder in Home Assistant (easiest, no local tools)
@@ -106,8 +121,10 @@ needs tuning per meter. See **[docs/CALIBRATION.md](docs/CALIBRATION.md)**.
 
 | File | Purpose |
 |------|---------|
-| [`config.yaml`](config.yaml) | Top-level: substitutions, the AI components, includes |
-| [`dashboard/`](dashboard/) | Paste-in wrapper for the ESPHome Builder (Option A) |
+| [`config.yaml`](config.yaml) | XIAO ESP32-S3 Sense entrypoint (substitutions + includes) |
+| [`config_memento.yaml`](config_memento.yaml) | Adafruit MEMENTO entrypoint |
+| [`ai_stack.yaml`](ai_stack.yaml) | Shared, board-agnostic AI + capture stack |
+| [`dashboard/`](dashboard/) | Paste-in wrappers for the ESPHome Builder (Option A) |
 | [`secrets.yaml.example`](secrets.yaml.example) | Wi-Fi + MQTT credentials template (Option B) |
 | [`mqtt.yaml`](mqtt.yaml) | MQTT discovery — optional alternative to the native API |
 | [`web_server.yaml`](web_server.yaml) | Local web UI for the calibration preview + runtime tweaks |

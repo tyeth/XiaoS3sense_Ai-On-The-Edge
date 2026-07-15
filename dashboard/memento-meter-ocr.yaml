@@ -1,0 +1,24 @@
+# ---------------------------------------------------------------------------
+# ESPHome Builder wrapper for the Adafruit MEMENTO (PyCamera).
+# Paste as a new device in the ESPHome Builder; it pulls config_memento.yaml
+# from GitHub. Only wifi_ssid / wifi_password secrets are needed.
+# ---------------------------------------------------------------------------
+substitutions:
+  name: memento-meter-ocr
+  friendly_name: "Memento Meter OCR"
+  id_prefix: memento_meter
+
+  meter_unit: kWh
+  meter_device_class: energy
+  meter_state_class: total_increasing
+
+packages:
+  meter_ocr:
+    url: https://github.com/tyeth/XiaoS3sense_Ai-On-The-Edge
+    ref: main
+    files: [config_memento.yaml]
+    refresh: 0s
+
+# Transport is the native ESPHome API by default (add via the ESPHome
+# integration). For MQTT, uncomment the mqtt include in config_memento.yaml and
+# set the mqtt_* substitutions.
