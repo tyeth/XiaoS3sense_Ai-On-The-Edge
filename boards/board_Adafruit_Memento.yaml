@@ -15,20 +15,6 @@ esphome:
   project:
     name: "tyeth.xiao-meter-ocr"
     version: "${revision}"
-  on_boot:
-    # Tame the ring glare: default the flash to a modest brightness. The flash
-    # controller only toggles the light on/off, so it reuses this level. Adjust
-    # the 25% to taste. (Remove this block if you'd rather set brightness live in
-    # HA — with it here, brightness resets to 25% on every boot.)
-    priority: -100
-    then:
-      - light.turn_on:
-          id: ${id_prefix}_flash_neopixel
-          brightness: 25%
-          red: 100%
-          green: 100%
-          blue: 100%
-      - light.turn_off: ${id_prefix}_flash_neopixel
   platformio_options:
     board_build.extra_flags:
       - -DBOARD_HAS_PSRAM
